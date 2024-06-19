@@ -6,7 +6,7 @@ import numpy as np
 
 def upload_image():
     # Open a file dialog to select an image file
-    file_path = r'C:\Users\pa480\OneDrive\Pictures\Camera Roll\calibration_cross_hair.jpg'
+    file_path = r'C:\Users\pa480\OneDrive\Documents\GitHub\AccuracyMeasurement\calibration_cross_hair.jpg'
     if file_path:
         process_image(file_path)
 
@@ -67,10 +67,10 @@ def draw_circle(image):
         x, y = event.xdata, event.ydata
         if x is not None and y is not None:
             # Define the radius of the circle
-            radius = 500
+            radius = 600
 
             # Draw a circle at the clicked point
-            draw.ellipse((x - radius, y - radius, x + radius, y + radius), outline="black", width=6)
+            draw.ellipse((x - radius, y - radius, x + radius, y + radius), outline="black", width=9)
             mask_image_outside_circle(image_with_circle, x, y, radius)
             redraw_image()
             fig.canvas.mpl_disconnect(cid_click)  # Disable further clicks
@@ -97,7 +97,7 @@ def mask_image_outside_circle(image, center_x, center_y, radius):
 
 def save_processed_image(image_with_circle):
     # Save the image with the circle and masked area
-    save_path = r'C:\Users\pa480\OneDrive\Pictures\Camera Roll\ruler.jpg'
+    save_path = r'C:\Users\pa480\OneDrive\Documents\GitHub\AccuracyMeasurement\ruler.jpg'
     if save_path:
         image_with_circle.save(save_path)
         print(f"Image saved to {save_path}")

@@ -123,7 +123,7 @@ book = xlrd.open_workbook("Samples.xls")
 sh = book.sheet_by_index(0)
 
 for i in range(0, sh.nrows):
-    fname = './' + sh.cell_value(i,0) + '_SW.jpg'
+    fname = './' + sh.cell_value(i,0) + '.jpg'
     
     # Setup
     img = cv2.imread(r'C:\Users\pa480\OneDrive\Documents\Bionaut\Contract work\Fenestration tutorial\{}'.format(fname))  # Load the image
