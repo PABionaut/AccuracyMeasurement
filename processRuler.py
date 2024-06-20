@@ -67,10 +67,10 @@ def draw_circle(image):
         x, y = event.xdata, event.ydata
         if x is not None and y is not None:
             # Define the radius of the circle
-            radius = 600
+            radius = 700
 
             # Draw a circle at the clicked point
-            draw.ellipse((x - radius, y - radius, x + radius, y + radius), outline="black", width=9)
+            draw.ellipse((x - radius, y - radius, x + radius, y + radius), outline="black", width=3)
             mask_image_outside_circle(image_with_circle, x, y, radius)
             redraw_image()
             fig.canvas.mpl_disconnect(cid_click)  # Disable further clicks

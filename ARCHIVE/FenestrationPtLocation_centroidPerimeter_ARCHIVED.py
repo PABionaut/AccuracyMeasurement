@@ -7,11 +7,17 @@
 import cv2
 import numpy as np
 import os
+import glob
 import pickle
 import xlwt
+import xlrd
 import sympy as spy
+from PIL import Image
+import numpy as np
 import matplotlib
-import easygui
+import matplotlib.pyplot as plt
+import matplotlib.widgets as widgets
+import time
 
 matplotlib.use('Qt5AGG')  # Use TKAgg for GUI handling, change if necessary
 # switch to 'Qt5Agg' or another backend that is appropriate for the system
@@ -113,25 +119,14 @@ Xend = CalibrationFuncParamsRead[0][2]
 Ystart = CalibrationFuncParamsRead[1][1]
 Yend = CalibrationFuncParamsRead[1][1]
 
-path = easygui.fileopenbox("Welcome", "COPR", filetypes= "*.jpg", multiple=True)
-print("Paths are", path)
+book = xlrd.open_workbook("Samples.xls")
+sh = book.sheet_by_index(0)
 
-file_names = []
-for i in range(len(path)):
-    file_names.append(os.path.basename(path[i]))
+for i in range(0, sh.nrows):
+    fname = './' + sh.cell_value(i,0) + '.jpg'
     
-raw_paths = [p.replace("\\", "\\\\") for p in path]
-
-# book = xlrd.open_workbook("Samples.xls")
-# sh = book.sheet_by_index(0)
-
-ref_pts_img = []
-fen_pts_img = []
-
-for fname in raw_paths:
-   
     # Setup
-    img = cv2.imread(fname)  # Load the image
+    img = cv2.imread(r'C:\Users\pa480\OneDrive\Documents\Bionaut\Contract work\Fenestration tutorial\{}'.format(fname))  # Load the image
     points = []  # List to store points
     centroids = []  # List to store centroids
     
@@ -142,27 +137,24 @@ for fname in raw_paths:
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    ref_pts_img.append(centroids[0])
-    fen_pts_img.append(centroids[1])
-
-    print("ref_pts is ", ref_pts_img)
-    print("fen_pts is ", fen_pts_img)
-    print("diff is", np.linalg.norm(np.asarray(fen_pts_img[0])-np.asarray(ref_pts_img[0])))
     
-ref_pts_img = np.asarray(ref_pts_img)
-fen_pts_img = np.asarray(fen_pts_img)
+ref_pts_img = []
+fen_pts_img = []
 
+for j in range(0, sh.nrows*2):
+    if j%2 == 0:
+        ref_pts_img.append(sel_pts[j])
+    elif j%2 == 1:
+        fen_pts_img.append(sel_pts[j])
+    
 ref_pts_obj = []
 fen_pts_obj = []
-for j in range(len(path)):
+for j in range(0, sh.nrows):
     ref_pts_obj.append( [pix2XY(ref_pts_img[j])[0], pix2XY(ref_pts_img[j])[1]] )
     fen_pts_obj.append( [pix2XY(fen_pts_img[j])[0], pix2XY(fen_pts_img[j])[1]] )
     
 ref_pts_obj = np.asarray(ref_pts_obj)
 fen_pts_obj = np.asarray(fen_pts_obj)
-
-print("ref_pts_obj is ", ref_pts_obj[0])
-print("fen_pts_obj is ", fen_pts_obj[0])
 
 # fenCo = pix2XY(scaled_pts[0])
 
@@ -172,24 +164,23 @@ print("fen_pts_obj is ", fen_pts_obj[0])
 # cv2.imwrite('Annotated.jpg', OLCHimg)
 
 excel_data = []
-for i in range(len(path)):
-    print(raw_paths[i])
-    excel_data.append( [raw_paths[i], ref_pts_img[i], fen_pts_img[i], ref_pts_obj[i], fen_pts_obj[i], np.linalg.norm(np.asarray(fen_pts_obj[i])-np.asarray(ref_pts_obj[i]))] )
+for i in range(0, sh.nrows):
+    excel_data.append( [sh.cell_value(i,0), ref_pts_img[i], fen_pts_img[i], ref_pts_obj[i], fen_pts_obj[i], np.linalg.norm(fen_pts_obj[i]-ref_pts_obj[i])] )
     
 wb = xlwt.Workbook()
 ws = wb.add_sheet('measures')
 style0 = xlwt.easyxf('font: name Times New Roman, color-index red, bold on',
     num_format_str='#,##0.00')
-for i in range(len(path)):
+for i in range(0, sh.nrows):
     ws.write(i, 0, excel_data[i][0], style0)
-    ws.write(i, 1, str(excel_data[i][1][0]), style0)
-    ws.write(i, 2, str(excel_data[i][1][1]), style0)
-    ws.write(i, 3, str(excel_data[i][2][0]), style0)
-    ws.write(i, 4, str(excel_data[i][2][1]), style0)
-    ws.write(i, 5, str(excel_data[i][3][0]), style0)
-    ws.write(i, 6, str(excel_data[i][3][1]), style0)
-    ws.write(i, 7, str(excel_data[i][4][0]), style0)
-    ws.write(i, 8, str(excel_data[i][4][1]), style0)
-    ws.write(i, 9, str(excel_data[i][5]), style0)
+    ws.write(i, 1, excel_data[i][1][0], style0)
+    ws.write(i, 2, excel_data[i][1][1], style0)
+    ws.write(i, 3, excel_data[i][2][0], style0)
+    ws.write(i, 4, excel_data[i][2][1], style0)
+    ws.write(i, 5, excel_data[i][3][0], style0)
+    ws.write(i, 6, excel_data[i][3][1], style0)
+    ws.write(i, 7, excel_data[i][4][0], style0)
+    ws.write(i, 8, excel_data[i][4][1], style0)
+    ws.write(i, 9, excel_data[i][5], style0)
     
 wb.save('Accuracy Data.xls')

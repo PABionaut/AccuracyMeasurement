@@ -26,11 +26,23 @@ def correctionFactor(x):
         return x
     
 def click_event(event, x, y, flags, params):
-    global points, img, centroids
+    global points, img, centroids, zoom_factor, xoff, yoff, imgS
+    
+    # Adjust mouse coordinates for zoom and offset
+    x_adjusted = int((x) / zoom_factor)
+    y_adjusted = int((y) / zoom_factor)
+    
+    if event == cv2.EVENT_MOUSEWHEEL:
+        # Scroll up event
+        if flags > 0:
+            zoom_factor += 0.1  # Increase zoom factor
+        # Scroll down event
+        else:
+            zoom_factor = max(0.1, zoom_factor - 0.1)  # Decrease zoom factor, but ensure it doesn't go below 0.1
     
     if event == cv2.EVENT_LBUTTONDOWN:
-        cv2.circle(img, (x, y), 3, (0, 255, 0), -1)  # Mark the point of click
-        points.append((x, y))
+        cv2.circle(img, (x_adjusted, y_adjusted), 3, (0, 255, 0), -1)  # Mark the point of click
+        points.append((int(((x) / zoom_factor)+xoff), int(((y) / zoom_factor)+yoff)))
         
         if len(points) == 3:
             center, radius = calculate_circle(points)
@@ -137,11 +149,46 @@ for fname in raw_paths:
     
     cv2.namedWindow('image')  # Create a window named 'image'
     cv2.setMouseCallback('image', click_event)  # Set mouse callback
-    
-    cv2.imshow('image', img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
+    xoff = 0
+    yoff = 0
+    panstep = 10
+    zoom_factor = 1.0
+    
+    while(1):
+        if yoff<0:
+            yoff = 0
+        elif yoff>img.shape[1]:
+            yoff = img.shape[1]-panstep
+        if xoff<0:
+            xoff = 0
+        elif xoff>img.shape[0]:
+            yoff = img.shape[1]-panstep
+            
+        imgS = img[yoff:,xoff:]
+        
+        cv2.resize
+        key = cv2.waitKey(20)
+        if key == 119:
+            yoff = yoff-panstep
+        elif key == 115:
+            yoff = yoff+panstep
+        elif key == 97:
+            xoff = xoff-panstep
+        elif key == 100:
+            xoff = xoff+panstep
+        elif cv2.waitKey(20) & 0xFF == 27:
+            break
+        
+        imgS_resized = cv2.resize(imgS, None, fx=zoom_factor, fy=zoom_factor)
+
+        # Display the resized image
+        cv2.imshow('Select Reference, Fenestration Point', imgS_resized)
+        
+        # Call the mouse event handler with adjusted coordinates
+        cv2.setMouseCallback('Select Reference, Fenestration Point', click_event)
+    cv2.destroyAllWindows()
+    
     ref_pts_img.append(centroids[0])
     fen_pts_img.append(centroids[1])
 
