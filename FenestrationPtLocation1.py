@@ -7,40 +7,20 @@ Created on Tue Mar  5 10:09:18 2024
 
 import cv2
 import numpy as np
+import os
+import glob
+import matplotlib.pyplot as plt 
 import pickle
 import xlwt
 import xlrd
+
 import sympy as spy
 
-sel_pts = []
-ctr = 0
-CalibrationInfo = []
-CalibrationImagePoints = []
-
-# Define the zoom factor
-zoom_factor = 1.0
-
-def correction_factor(d):
-    return d#-(0.2608*d+0.0049)
-
-def on_mouse_event(event, x, y, flags, param):
-    global sel_pts, ctr, zoom_factor, xoff, yoff, img, imgS, OLCHimg
-    
-    # Adjust mouse coordinates for zoom and offset
-    x_adjusted = int((x) / zoom_factor)
-    y_adjusted = int((y) / zoom_factor)
-    # restart from here
+def reg_sel_pt(event,x,y,flags,param):
     if event == cv2.EVENT_LBUTTONDBLCLK:
-        sel_pts.append([int(((x) / zoom_factor)+xoff), int(((y) / zoom_factor)+yoff)])  # Store the coordinates of the clicked point
-        cv2.circle(imgS, (x_adjusted, y_adjusted), 2, (0, 0, 255), -1)  # Draw a red dot at the clicked position
-        
-    if event == cv2.EVENT_MOUSEWHEEL:
-        # Scroll up event
-        if flags > 0:
-            zoom_factor += 0.1  # Increase zoom factor
-        # Scroll down event
-        else:
-            zoom_factor = max(0.1, zoom_factor - 0.1)  # Decrease zoom factor, but ensure it doesn't go below 0.1
+        global ctr
+        sel_pts.append([x+xoff,y+yoff])
+        cv2.circle(imgS,(x,y),2,(0,0,255),-1)
         
 def pix2XY(pixCo):
     X = spy.symbols ('X', real=True)
@@ -56,6 +36,11 @@ def pix2XY(pixCo):
     yCo =  spy.solve(EqY)
     
     return(float(xCo[0]), float(yCo[0]))
+
+sel_pts = []
+ctr = 0
+CalibrationInfo = []
+CalibrationImagePoints = []
 
 with open('CalibrationInfo', 'rb') as fp:
      CalibrationInfoRead = pickle.load(fp)
@@ -78,13 +63,11 @@ for i in range(0, sh.nrows):
     img = cv2.imread(fname)
     
     cv2.namedWindow('Select Reference, Fenestration Point', cv2.WINDOW_AUTOSIZE)
-    cv2.setMouseCallback('Select Reference, Fenestration Point', on_mouse_event)
+    cv2.setMouseCallback('Select Reference, Fenestration Point', reg_sel_pt)
     
     xoff = 0
     yoff = 0
     panstep = 10
-    zoom_factor = 1.0
-    
     while(1):
         if yoff<0:
             yoff = 0
@@ -94,10 +77,8 @@ for i in range(0, sh.nrows):
             xoff = 0
         elif xoff>img.shape[0]:
             yoff = img.shape[1]-panstep
-            
         imgS = img[yoff:,xoff:]
-        
-        cv2.resize
+        cv2.imshow('Select Reference, Fenestration Point', imgS)
         key = cv2.waitKey(20)
         if key == 119:
             yoff = yoff-panstep
@@ -109,14 +90,6 @@ for i in range(0, sh.nrows):
             xoff = xoff+panstep
         elif cv2.waitKey(20) & 0xFF == 27:
             break
-        
-        imgS_resized = cv2.resize(imgS, None, fx=zoom_factor, fy=zoom_factor)
- 
-        # Display the resized image
-        cv2.imshow('Select Reference, Fenestration Point', imgS_resized)
-        
-        # Call the mouse event handler with adjusted coordinates
-        cv2.setMouseCallback('Select Reference, Fenestration Point', on_mouse_event)
     cv2.destroyAllWindows()
 
 ref_pts_img = []
@@ -146,8 +119,8 @@ fen_pts_obj = np.asarray(fen_pts_obj)
 
 excel_data = []
 for i in range(0, sh.nrows):
-    #excel_data.append( [sh.cell_value(i,0), ref_pts_img[i], fen_pts_img[i], ref_pts_obj[i], fen_pts_obj[i], np.linalg.norm(fen_pts_obj[i]-ref_pts_obj[i])] )
-    excel_data.append( [sh.cell_value(i,0), ref_pts_img[i], fen_pts_img[i], ref_pts_obj[i], fen_pts_obj[i], np.linalg.norm(correction_factor(fen_pts_obj[i]-ref_pts_obj[i]))] )
+    excel_data.append( [sh.cell_value(i,0), ref_pts_img[i], fen_pts_img[i], ref_pts_obj[i], fen_pts_obj[i], np.linalg.norm(fen_pts_obj[i]-ref_pts_obj[i])] )
+    
 wb = xlwt.Workbook()
 ws = wb.add_sheet('measures')
 style0 = xlwt.easyxf('font: name Times New Roman, color-index red, bold on',

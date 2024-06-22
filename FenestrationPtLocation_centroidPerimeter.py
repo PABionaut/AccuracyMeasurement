@@ -17,13 +17,15 @@ matplotlib.use('Qt5AGG')  # Use TKAgg for GUI handling, change if necessary
 # switch to 'Qt5Agg' or another backend that is appropriate for the system
 
 def correctionFactor(x):
+    '''
     if x <= 836:
         calX = int(x-.0588*x-0.3196)
         print('X: ' + str(x))
         print('Cal X: ' + str(calX))
         return calX
     if x > 336:
-        return x
+    '''
+    return x
     
 def click_event(event, x, y, flags, params):
     global points, img, centroids
